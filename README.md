@@ -65,7 +65,7 @@ URL to send value as ajax request. URL should end in a query string parameter wi
 
 <dt><code>parseMatches</code></dt>
 <dd><i>function</i><br/>
-Returns html string of parsed matches. Function should accept a json object as a parameter, and return an html string of <code>&lt;li&gt;</code> elements with inner <code>&lt;a&gt;</code> elements. Additional data attributes or markup can be added as needed.</dd>
+Returns html string of parsed matches. Function should accept a json object as a parameter, and return either an html string of <code>&lt;li&gt;</code> elements with inner <code>&lt;a&gt;</code> elements or an array of <code>&lt;li&gt;</code> nodes. Additional data attributes or markup can be added as needed.</dd>
 </dl>
 
 ##Optional Parameters

@@ -1,156 +1,172 @@
-Element.prototype.mindreader = function(params) {
-	var self = this;
-	//polyfill for javascript forEach
-    if (!Array.prototype.forEach) {
-        Array.prototype.forEach = function (callback, thisArg) {
+Element.prototype.mindreader = function(mindreaderConfig) {
+    var initDomHelpers = function() {
+        //polyfill for javascript forEach
+        if (!Array.prototype.forEach) {
+            Array.prototype.forEach = function (callback, thisArg) {
 
-            var T, k;
+                var T, k;
 
-            if (this == null) {
-                throw new TypeError(' this is null or not defined');
-            }
-            var O = Object(this);
-            var len = O.length >>> 0;
-            if (typeof callback !== "function") {
-                throw new TypeError(callback + ' is not a function');
-            }
-            if (arguments.length > 1) {
-                T = thisArg;
-            }
-            k = 0;
-            while (k < len) {
-
-                var kValue;
-                if (k in O) {
-                    kValue = O[k];
-                    callback.call(T, kValue, k, O);
+                if (this == null) {
+                    throw new TypeError(' this is null or not defined');
                 }
-                k++;
+                var O = Object(this);
+                var len = O.length >>> 0;
+                if (typeof callback !== "function") {
+                    throw new TypeError(callback + ' is not a function');
+                }
+                if (arguments.length > 1) {
+                    T = thisArg;
+                }
+                k = 0;
+                while (k < len) {
+
+                    var kValue;
+                    if (k in O) {
+                        kValue = O[k];
+                        callback.call(T, kValue, k, O);
+                    }
+                    k++;
+                }
+            };
+        }
+
+        //convert node list from document.querySelectorAll to array for parsing/looping
+        Array.convertNodeList = function (list) {
+            var array = new Array(list.length);
+            for (var i = 0, n = list.length; i < n; i++)
+                array[i] = list[i];
+            return array;
+        };
+
+        //find all child elements that meet given criteria
+        Element.prototype._find = function(selector) {
+            var hasId = this.id ? true : false;
+            //if element does not have id, create temporary ID for search
+            if (!hasId) {
+                this.id = 'temp-' + Math.random().toString(36).substr(2);
+            }
+            var matches = document.querySelectorAll('#' + this.id + ' ' + selector);
+            if (matches.length > 0) {
+                return Array.convertNodeList(matches);
+            }
+            else {
+                return [];
+            }
+            if (!hasId) {
+                elem.removeAttribute('id');
             }
         };
-    }
 
-    //convert node list from document.querySelectorAll to array for parsing/looping
-    Array.convertNodeList = function (list) {
-        var array = new Array(list.length);
-        for (var i = 0, n = list.length; i < n; i++)
-            array[i] = list[i];
-        return array;
-    };
-
-        //read data attributes from element
-    var dataAttributeString = function (nodeName) {
-        var string = nodeName.split('-');
-        string.splice(0, 1);
-        string.forEach(function (v, i) {
-            if (i !== 0) {
-                string[i] = v.charAt(0).toUpperCase() + v.slice(1);
+        //empty element
+        Element.prototype._empty = function() {
+            while (this.hasChildNodes()) {
+                this.removeChild(this.lastChild);
             }
-        });
-        return string.join('');
-    };
+        };
 
-    //merge objects
-    var extend = function(obj1, obj2) {
-    	var extended = {};
-    	for (var i = 0; i < arguments.length; i++) {
-    		for (var key in arguments[i]) {
-    			extended[key] = arguments[i][key];
-    		}
-    	}
-    	return extended;
-    };
+        //set multiple attributes on element
+        Element.prototype._setAttributes = function(attrs) {
+            for (var attr in attrs) {
+                this.setAttribute(attr, attrs[attr]);
+            }
+        };
 
-    //find all child elements that meet given criteria
-    Element.prototype._find = function(selector) {
-    	var hasId = this.id ? true : false;
-    	//if element does not have id, create temporary ID for search
-    	if (!hasId) {
-    		this.id = 'temp-' + Math.random().toString(36).substr(2);
-    	}
-    	var matches = document.querySelectorAll('#' + this.id + ' ' + selector);
-    	if (matches.length > 0) {
-    		return Array.convertNodeList(matches);
-    	}
-    	else {
-    		return [];
-    	}
-    	if (!hasId) {
-    		elem.removeAttribute('id');
-    	}
-    };
+        //add class to element
+        Element.prototype._addClass = function(name) {
+            if (this.className.length) {
+                var names = name.split(' ');
+                var classes = this.className.split(' ');
+                //do not add duplicate names
+                names.forEach(function(n, i) {
+                    if (classes.indexOf(n) >= 0) {
+                        names.splice(names.indexOf(n), 1);
+                    }
+                });
+                if (names.length > 0) {
+                    this.className += ' ' + names.join(' ');
+                }
+            }
+            else {
+                this.className = name;
+            }
+        };
 
-    Element.prototype._empty = function() {
-    	while (this.hasChildNodes()) {
-		    this.removeChild(this.lastChild);
-		}
-    };
+        //remove class from element
+        Element.prototype._removeClass = function(name) {
+            if (this.className.length > 0) {
+                var names = name.split(' ');
+                var classes = this.className.split(' ');
+                names.forEach(function(n, i) {
+                    if (classes.indexOf(n) >= 0) {
+                        classes.splice(classes.indexOf(n), 1);
+                    }
+                });
+                this.className = classes.join(' '); 
+            }
+        };
 
-    //set multiple attributes
-    Element.prototype._setAttributes = function(attrs) {
-    	for (var attr in attrs) {
-    		this.setAttribute(attr, attrs[attr]);
-    	}
-    };
+        //get element text content
+        Element.prototype._text = function(newText) {
+            if (newText && typeof newText != 'string') {
+                newText = false;
+            }
+            if (!newText && (this.innerText || this.textContent)) {
+                return this.innerText || this.textContent;
+            }
+            else if (newText) {
+                if ('textContent' in document.body) {
+                  this.textContent = newText;
+                }
+                else {
+                    this.innerText = newText;
+                }
+            }
+        }
 
-    //add Class
-    Element.prototype._addClass = function(name) {
-    	if (this.className.length) {
-    		var names = name.split(' ');
-    		var classes = this.className.split(' ');
-    		//do not add duplicate names
-    		names.forEach(function(n, i) {
-    			if (classes.indexOf(n) >= 0) {
-	    			names.splice(names.indexOf(n), 1);
-	    		}
-    		});
-    		if (names.length > 0) {
-    			this.className += ' ' + names.join(' ');
-    		}
-    	}
-    	else {
-    		this.className = name;
-    	}
-    };
+        //trigger element event
+        Element.prototype._triggerMouseEvent = function(event) {
+            var evt;
+            if (document.createEvent) {
+                evt = document.createEvent("MouseEvents");
+                evt.initMouseEvent(event);
+            }
+            (evt) ? this.dispatchEvent(evt) : (el[event] && el[event]());
+        };
 
-    //remove class
-    Element.prototype._removeClass = function(name) {
-    	if (this.className.length > 0) {
-    		var names = name.split(' ');
-    		var classes = this.className.split(' ');
-    		names.forEach(function(n, i) {
-    			if (classes.indexOf(n) >= 0) {
-	    			classes.splice(classes.indexOf(n), 1);
-	    		}
-    		});
-    		this.className = classes.join(' ');	
-    	}
-    };
+        //merge objects - result will contain properties of all objects, properties of source will be rewritten by target in order targets are declared
+        Object.prototype._mergeWith = function(object, override) {
+            //object can be an array of objects or a single object
+            //override is a boolean for whether existing parameters in the first object should be overwritten if the same parameters exist in the objects being merged into it.
+            var objects = [];
+            switch(Object.prototype.toString.call(object)) {
+                case '[object Array]':
+                    objects = object;
+                    break;
+                case '[object Object]':
+                    objects.push(object);
+                    break;
+                default:
+                    return this;
+                    break;
+            }
 
-    //get element text
-    Element.prototype._text = function(newText) {
-    	if (newText && typeof newText != 'string') {
-    		newText = false;
-    	}
-    	if (!newText && (this.innerText || this.textContent)) {
-    		return this.innerText || this.textContent;
-    	}
-    	else if (newText && this.textContent) {
-    		this.textContent = newText;
-    	}
-    	else if (newText && this.innerText) {
-    		this.innerText = newText;
-    	}
-    }
+            if (objects.length === 0) {
+                return this;
+            }
 
-    //trigger
-    Element.prototype._triggerMouseEvent = function(event) {
-    	var evt;
-    	if (document.createEvent) {
-    		evt = document.createEvent("MouseEvents");
-    		evt.initMouseEvent(event);
-    	}
-    	(evt) ? this.dispatchEvent(evt) : (el[event] && el[event]());
+            var merged = {};
+            for (var key in this) {
+                merged[key] = this[key];
+            }
+            for (var i = 0; i < objects.length; i++) {
+                for (var key in objects[i]) {
+                    if (override || !merged[key]) {
+                        merged[key] = objects[i][key];
+                    }
+                }
+            }
+            return merged;
+        };
     };
 
     //constructor for ajax handler
@@ -159,8 +175,8 @@ Element.prototype.mindreader = function(params) {
             get: "GET",
             post: "POST"
         };
-        var send = function (params) {
-            var config = {
+        var send = function (ajaxConfig) {
+            var defaultConfig = {
                 method: methods.post,
                 url: '',
                 data: null,
@@ -172,9 +188,7 @@ Element.prototype.mindreader = function(params) {
                 }
             }
 
-            for (var key in params) {
-                config[key] = params[key];
-            }
+            var config = ajaxConfig._mergeWith(defaultConfig);
 
             var query = '';
 
@@ -197,7 +211,7 @@ Element.prototype.mindreader = function(params) {
 
             var req = new XMLHttpRequest();
             if ('withCredentials' in req) {
-                req.open(config.method, config.url);
+                req.open(config.method, config.url, true);
 
             }
             else if (typeof XDomainRequest != 'undefined') {
@@ -244,8 +258,6 @@ Element.prototype.mindreader = function(params) {
         };
     };
 
-    var $ajax = new AjaxHandler();
-
     var keyCode = {
         BACKSPACE: 8,
         DOWN: 40,
@@ -275,7 +287,7 @@ Element.prototype.mindreader = function(params) {
     	down: 1
     };
 
-    var defaults = {
+    var defaultConfig = {
         ajaxUrl: '',
         parseMatches: null,
         matchSelected: null,
@@ -290,11 +302,11 @@ Element.prototype.mindreader = function(params) {
     };
 
     var MindReader = {
-    	create: function(elem, params) {
+    	create: function(elem, config) {
     		this.el = elem;
     		this.el.setAttribute(dataAttributes.currentVal, '');
     		this.parent = elem.parentNode;   		
-    		this.params = extend(defaults, params);
+    		this.config = defaultConfig._mergeWith(config, true);
     		this.searchTimeout;
     		this.activeItem = {
     			el: null,
@@ -400,40 +412,44 @@ Element.prototype.mindreader = function(params) {
     		//clear previous results
     		var value = self.el.value;
     		self.el.setAttribute(dataAttributes.currentVal, value);
-    		if (value.length >= self.params.minLength) {
+    		if (value.length >= self.config.minLength) {
     			self.searchTimeout = setTimeout(function() {
     				//gather any additional data for posting
-                    if (self.params.postData != null && typeof self.params.postData == 'function' && typeof self.params.postData() == 'object') var dataObject = JSON.stringify(self.params.postData());
+                    if (self.config.postData != null && typeof self.config.postData == 'function' && typeof self.config.postData() == 'object') var dataObject = JSON.stringify(self.config.postData());
                     else var dataObject = null;
-                    
-                    $ajax[self.params.actionType.toLowerCase()]({
-                    	url: self.params.ajaxUrl + value,
+
+                    var $ajax = new AjaxHandler();
+
+                    $ajax[self.config.actionType.toLowerCase()]({
+                    	url: self.config.ajaxUrl + value,
                     	data: dataObject,
                     	callback: function(data) {
                     		if (typeof data == 'string') {
                                 data = JSON.parse(data);
                             }
-                            if (Object.prototype.toString.call(data) === '[object Array]' && self.params.parseMatches != null) {
+                            if (Object.prototype.toString.call(data) === '[object Array]' && self.config.parseMatches != null) {
                             	self.parseResults(data);
                             }
                     	},
-                    	errorCallback: self.params.errorCallback
+                    	errorCallback: self.config.errorCallback
                     });
-    			}, self.params.searchPause);
+    			}, self.config.searchPause);
     		}
-
+            else {
+                self.clearResults();
+            }
     	},
     	parseResults: function(data) {
     		var self = this;
     		self.clearResults();
     		if (data.length === 0) {
-    			if (self.params.noMatchStatus != null) {
+    			if (self.config.noMatchStatus != null) {
     				//create empty element for no matches
     				var noMatch = document.createElement('li');
     				noMatch.className = classes.nomatch;
-    				noMatch._text(self.params.noMatchStatus);
+    				noMatch._text(self.config.noMatchStatus);
     				self.results.appendChild(noMatch);
-    				self.statusBox._text(self.params.noMatchStatus);
+    				self.statusBox._text(self.config.noMatchStatus);
     			}
     			self.showResults();
     			self.el._addClass(classes.resultsOpen);
@@ -442,13 +458,31 @@ Element.prototype.mindreader = function(params) {
 
     		self.resultsData = data;
 
-    		//add result string to result box
-    		self.results.innerHTML = self.params.parseMatches(data);
+            self.displayData = self.config.parseMatches(data);
+
+            //if result parse is string, set as inner HTML. if result parse is array of elements, add to results box
+
+            switch(Object.prototype.toString.call(self.displayData)) {
+                case '[object Array]':
+                    var resultCount = self.displayData.length;
+                    if (self.displayData.length > 0) {
+                        self.displayData.forEach(function(v, i) {
+                            if (v.nodeType === 1) {
+                                self.results.appendChild(v);
+                            }
+                        });
+                    }
+                    break;
+                case '[object String]':
+                    var resultCount = self.resultsData.length;
+                    self.results.innerHTML = self.config.parseMatches(data);
+                    break;
+            }
+    		
 
     		//update status to result count
-    		var resultCount = self.resultsData.length;
     		if (resultCount > 0) {
-    			self.statusBox._text(self.params.matchStatus.replace('{0}', resultCount));
+    			self.statusBox._text(self.config.matchStatus.replace('{0}', resultCount));
     		}
     		self.showResults();
     		self.el._addClass(classes.resultsOpen);
@@ -472,10 +506,10 @@ Element.prototype.mindreader = function(params) {
     					self.activeItem.index = i;
     				};
 
-    				if (self.params.matchSelected != null && self.params.matchEvents && self.params.matchEvents.length > 0) {
-    					var events = self.params.matchEvents.split(' ');
+    				if (self.config.matchSelected != null && self.config.matchEvents && self.config.matchEvents.length > 0) {
+    					var events = self.config.matchEvents.split(' ');
     					events.forEach(function(e, i) {
-    						elem.addEventListener(e, self.params.matchSelected);
+    						elem.addEventListener(e, self.config.matchSelected);
     					});
     				}
     			});
@@ -531,6 +565,7 @@ Element.prototype.mindreader = function(params) {
     			var activeItem = self.results._find('a')[openStart];
     			self.activeItem.el = activeItem;
     			self.activeItem.index = openStart;
+                self.el.value = activeItem._text();
     			self.statusBox._text(activeItem._text());
     			activeItem._triggerMouseEvent('mouseover');
     		}
@@ -547,6 +582,7 @@ Element.prototype.mindreader = function(params) {
     		//if list is open, make adjacent list item active depending on direction
     		else {
     			var nextItem = resultListItems[incr(self.activeItem.index)]._find('a')[0];
+                self.el.value = nextItem._text();
     			self.statusBox._text(nextItem._text());
     			nextItem._triggerMouseEvent('mouseover');
     		}
@@ -554,5 +590,6 @@ Element.prototype.mindreader = function(params) {
     	}
     }
 
-    MindReader.create(self, params);
+    initDomHelpers();
+    MindReader.create(this, mindreaderConfig);
 };
