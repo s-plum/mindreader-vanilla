@@ -496,6 +496,7 @@ Element.prototype.mindreader = function(mindreaderConfig) {
     					self.el.value = e.target._text();
     					self.clearResults();
     					self.el.focus();
+                        return false;
     				};
     				elem.onmouseover = function(e) {
     					if (self.activeItem.el != null) {
