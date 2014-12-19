@@ -128,7 +128,7 @@ Element.prototype.mindreader = function(mindreaderConfig) {
             var evt;
             if (document.createEvent) {
                 evt = document.createEvent("MouseEvents");
-                evt.initMouseEvent(event);
+                evt.initMouseEvent(event, true, true);
             }
             (evt) ? this.dispatchEvent(evt) : (el[event] && el[event]());
         };
@@ -496,7 +496,6 @@ Element.prototype.mindreader = function(mindreaderConfig) {
     					self.el.value = e.target._text();
     					self.clearResults();
     					self.el.focus();
-                        return false;
     				};
     				elem.onmouseover = function(e) {
     					if (self.activeItem.el != null) {
