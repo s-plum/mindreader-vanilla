@@ -42,7 +42,7 @@ gulp.task('requirejs', function() {
 	    }
 	}))
 	.pipe(concat('demo-basic.min.js'))
-	//.pipe(uglify())
+	.pipe(uglify())
 	.pipe(gulp.dest('./docs/js/min'))
 	.pipe(connect.reload());
 });

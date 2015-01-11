@@ -10,7 +10,7 @@ require(["mindreader-vanilla"], function() {
 		    		var li = document.createElement('li');
 		    		var a = document.createElement('a');
 		    		a.href = "#";
-		    		a.text = result;
+		    		a.innerHTML = result;
 		    		li.appendChild(a);
 		    		results.push(li);
 		    	}
