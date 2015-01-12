@@ -44,13 +44,13 @@ All that your input needs to get in touch with its third eye is a unique id and 
 	}
 
 ###Javascript
-    $('#keyword-search-sample').mindreader({
+    var keywordSearch = new Mindreader(document.getElementById('keyword-search-sample'), {
 	    ajaxUrl: 'http://domain.com/search?term=', //external service
 	    parseMatches: function(data) {
 	    	//this function should be customized according to your data structure
 	    	//for this example, data is an array of strings
 	        var htmlString = '';
-	        $.each(data, function (index, result) {
+	        data.forEach(function (result, i) {
 	           htmlString += '<li><a href="#">' + result + '</a></li>';
 	        });
 	        return htmlString;
