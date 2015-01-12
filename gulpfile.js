@@ -5,10 +5,12 @@ var gulp = require('gulp'),
 	amdOptimize = require('amd-optimize'),
 	concat = require('gulp-concat'),
 	uglify = require('gulp-uglify'),
+	jshint = require('gulp-jshint'),
 	paths = {
 		html: './*.html',
 		sass: './docs/css/src/**/*.scss',
-		js: './docs/js/*.js'
+		js: './docs/js/*.js',
+		mindreader: './js/mindreader-vanilla.js'
 	};
 
 gulp.task('webserver', function() {
@@ -34,15 +36,19 @@ gulp.task('compass', function() {
 		.pipe(connect.reload());
 });
 
-gulp.task('requirejs', function() {
+gulp.task('jshint', function() {
+	gulp.src(paths.mindreader)
+		.pipe(jshint())
+		.pipe(jshint.reporter('default'));
+});
+
+gulp.task('requirejs', ['jshint'], function() {
 	return gulp.src(paths.js)
-	.pipe(amdOptimize('demo-basic', {
-		paths: {
-	        'mindreader-vanilla': './js/mindreader-vanilla'
-	    }
-	}))
+	.pipe(jshint())
+	.pipe(jshint.reporter('default'))
+	.pipe(amdOptimize('demo-basic'))
 	.pipe(concat('demo-basic.min.js'))
-	.pipe(uglify())
+	//.pipe(uglify())
 	.pipe(gulp.dest('./docs/js/min'))
 	.pipe(connect.reload());
 });

@@ -1,6 +1,6 @@
-require(["mindreader-vanilla"], function() {
+require(["./js/mindreader-vanilla"], function(Mindreader) {
 	var demoInput = document.getElementById('mindreader-demo-input');
-	demoInput.mindreader({
+	var demoMindreader = new Mindreader(demoInput, {
 		ajaxUrl: 'docs/js/fruits.json?q=',
 		parseMatches: function(data) {
 		    var results = [];
